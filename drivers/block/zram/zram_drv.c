@@ -1348,10 +1348,10 @@ compress_again:
 	zstrm = zcomp_stream_get(zram->comp);
 	src = kmap_atomic(page);
 	ret = zcomp_compress(zstrm, src, &comp_len);
+	kunmap_atomic(src);
 
 	if (unlikely(ret)) {
 		zcomp_stream_put(zram->comp);
-		kunmap_atomic(src);
 		pr_err("Compression failed! err=%d\n", ret);
 		zs_free(zram->mem_pool, handle);
 		return ret;
@@ -1360,7 +1360,6 @@ compress_again:
 	if (comp_len >= huge_class_size)
 		comp_len = PAGE_SIZE;
 
-	kunmap_atomic(src);
 	/*
 	 * handle allocation has 2 paths:
 	 * a) fast path is executed with preemption disabled (for

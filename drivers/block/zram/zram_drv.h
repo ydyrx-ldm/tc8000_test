@@ -18,15 +18,6 @@
 #include <linux/rwsem.h>
 #include <linux/zsmalloc.h>
 #include <linux/crypto.h>
-// #ifdef VENDOR_EDIT
-// yaoge.wang@tcl.com, 2023/03/09, add zram dedup feature
-#ifdef CONFIG_ZRAM_DEDUP
-#include <linux/cache.h>
-#include <linux/zpool.h>
-#include <linux/crc32c.h>
-#include <linux/list_bl.h>
-#endif
-// #endif /* VENDOR_EDIT */
 
 #include "zcomp.h"
 
@@ -59,12 +50,6 @@ enum zram_pageflags {
 	ZRAM_UNDER_WB,	/* page is under writeback */
 	ZRAM_HUGE,	/* Incompressible page */
 	ZRAM_IDLE,	/* not accessed page since last idle marking */
-// #ifdef VENDOR_EDIT
-// yaoge.wang@tcl.com, 2023/03/09, add zram dedup feature
-#ifdef CONFIG_ZRAM_DEDUP
-	ZRAM_INDIRECT_HANDLE,
-#endif
-// #endif /* VENDOR_EDIT */
 
 	__NR_ZRAM_PAGEFLAGS,
 };
@@ -105,41 +90,9 @@ struct zram_stats {
 #endif
 };
 
-// #ifdef VENDOR_EDIT
-// yaoge.wang@tcl.com, 2023/03/09, add zram dedup feature
-#ifdef CONFIG_ZRAM_DEDUP
-struct zram_indirect_handle {
-	struct hlist_bl_node	node;
-	unsigned long		handle;
-	atomic_t		refs;
-	u32			hash;
-	size_t			len;
-};
-
-struct zram_hashtable_head {
-	struct hlist_bl_head	head;
-};
-
-struct zram_dedup {
-	struct zram_hashtable_head	*buckets;
-	int				nbuckets;
-	unsigned long			nr_pages;
-	atomic64_t			dedups;
-	atomic64_t debup_compr_size;
-};
-#endif
-// #endif /* VENDOR_EDIT */
-
 struct zram {
 	struct zram_table_entry *table;
 	struct zs_pool *mem_pool;
-// #ifdef VENDOR_EDIT
-// yaoge.wang@tcl.com, 2023/03/09, add zram dedup feature
-#ifdef CONFIG_ZRAM_DEDUP
-	struct zram_dedup *dedup;
-	bool dedup_enable;
-#endif
-// #endif /* VENDOR_EDIT */
 	struct zcomp *comp;
 	struct gendisk *disk;
 	/* Prevent concurrent execution of device init */
@@ -160,12 +113,6 @@ struct zram {
 	 * zram is claimed so open request will be failed
 	 */
 	bool claim; /* Protected by disk->open_mutex */
-// #ifdef VENDOR_EDIT
-// yaoge.wang@tcl.com, 2023/03/09, add zram dedup feature
-#if (defined CONFIG_ZRAM_WRITEBACK) || (defined CONFIG_ZRAM_DEDUP) || (defined CONFIG_ZRAM_NON_COMPRESS)
-	spinlock_t wb_limit_lock;
-#endif
-// #endif /* VENDOR_EDIT */
 #ifdef CONFIG_ZRAM_WRITEBACK
 	struct file *backing_dev;
 	spinlock_t wb_limit_lock;
@@ -179,11 +126,4 @@ struct zram {
 	struct dentry *debugfs_dir;
 #endif
 };
-// #ifdef VENDOR_EDIT
-// yaoge.wang@tcl.com, 2023/03/09, add zram dedup feature
-#ifdef CONFIG_ZRAM_DEDUP
-unsigned long zram_get_direct_handle(struct zram *zram, u32 index);
-void zram_free_handle(struct zram *zram, u32 index);
-#endif
-// #endif /* VENDOR_EDIT */
 #endif

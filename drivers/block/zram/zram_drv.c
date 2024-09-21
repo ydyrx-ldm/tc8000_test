@@ -1248,7 +1248,6 @@ static int __zram_bvec_read(struct zram *zram, struct page *page, u32 index,
 	}
 
 	handle = zram_get_handle(zram, index);
-
 	if (!handle || zram_test_flag(zram, index, ZRAM_SAME)) {
 		unsigned long value;
 		void *mem;
@@ -1359,7 +1358,6 @@ compress_again:
 
 	if (comp_len >= huge_class_size)
 		comp_len = PAGE_SIZE;
-
 	/*
 	 * handle allocation has 2 paths:
 	 * a) fast path is executed with preemption disabled (for
